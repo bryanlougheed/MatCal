@@ -1,8 +1,8 @@
 function  [p95_4 p68_2 prob] = matcal(c14age, c14err, calcurve, yeartype, resage, reserr)    
 % [p68_2 p95_4 prob] = matcal(c14age, c14err, calcurve, yeartype, resage, reserr)
 %
-% Function for 14C age calibration using Bayesian statistical analysis of
-% a probability density function of calibrated age.
+% Function for 14C age calibration using Bayesian statistical analysis of a
+% probability density function of calibrated age.
 %
 % --- Input parameters ---
 %
@@ -14,7 +14,7 @@ function  [p95_4 p68_2 prob] = matcal(c14age, c14err, calcurve, yeartype, resage
 %            'IntCal13', 'Marine13', 'SHCal13, 'IntCal09', 'Marine09'
 %            'IntCal04', 'Marine04', 'SHCal04, 'IntCal98', 'Marine98'
 %
-% yeartype = String specifying how MatCal will report calibrated age. 
+% yeartype = String specifying how MatCal will report calibrated age.
 %            Choices are 'Cal BP' or 'BCE/CE'.
 %
 % resage   = Optional. Specify reservoir age in 14C yr (default = 0).
@@ -270,8 +270,10 @@ if strcmpi(yeartype,'Cal BP') == 1
     
     prob2 = prob(cumsum(prob(:,2)) > 0.001 & cumsum(prob(:,2)) < 0.999);
     yrrng = (prob2(end,1) - prob2(1,1))/2;
-    syr = roundn(prob2(1,1) - yrrng, 2);
-    eyr = roundn(prob2(end,1) + yrrng, 2);
+    
+    % round to nearest hundred for nice plot limits
+    syr = (10^2) * round((prob2(1,1)-yrrng) / (10^2));
+    eyr = (10^2) * round((prob2(end,1)+yrrng) / (10^2));
     
     ind = find(curvecal >= syr & curvecal <= eyr);
     curvecal = curvecal(ind);
@@ -283,8 +285,10 @@ elseif strcmpi(yeartype,'BCE/CE') == 1
     prob2 = prob(cumsum(prob(:,2)) > 0.001 & cumsum(prob(:,2)) < 0.999);
     prob2 = flipud(prob2);
     yrrng = (prob2(end,1) - prob2(1,1))/2;
-    syr = roundn(prob2(1,1) - yrrng, 2);
-    eyr = roundn(prob2(end,1) + yrrng, 2);
+   
+    % round to nearest hundred for nice plot limits
+    syr = (10^2) * round((prob2(1,1)-yrrng) / (10^2));
+    eyr = (10^2) * round((prob2(end,1)+yrrng) / (10^2));
     
     curvecal = (curvecal-1950) * -1;
     ind = find(curvecal >= syr & curvecal <= eyr);
@@ -555,7 +559,7 @@ set(gcf,'InvertHardcopy','on');
 set(gcf,'color',1*[1 1 1]);
 
 % uncomment line below to automatically print Adobe PDF to working directory
-%print(figure(14), '-dpdf', ['MatCal ',num2str(c14ageorig),'±',num2str(c14errorig),'.pdf']);
+% print(figure(14), '-dpdf', ['MatCal ',num2str(c14ageorig),'±',num2str(c14errorig),'.pdf']);
 
 
 end
