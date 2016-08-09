@@ -144,7 +144,7 @@ c14err = sqrt(c14err^2 + reserr^2);
 
 % open cal curve data
 
-File = fopen([calcurve,'.14c']);
+File = fopen(['private/',calcurve,'.14c']);
 Contents = textscan(File,'%f %f %f %f %f','headerlines',headerlines,'delimiter',',');
 fclose(File);
 curvecal = flipud(Contents{1});
@@ -225,6 +225,13 @@ else
     p68_2 = flipud(p68_2);
 end
 
+%at this point ind1 is still empty using
+%c14age=15220;
+%c14err=60;
+%calcurve='intcal13';
+%yeartype='Cal BP';
+%resage=900;
+%reserr=500;
 
 % 2 sig
 
@@ -270,8 +277,8 @@ if strcmpi(yeartype,'Cal BP') == 1
     
     prob2 = prob(cumsum(prob(:,2)) > 0.001 & cumsum(prob(:,2)) < 0.999);
     yrrng = (prob2(end,1) - prob2(1,1))/2;
-    syr = roundn(prob2(1,1) - yrrng, 2);
-    eyr = roundn(prob2(end,1) + yrrng, 2);
+    syr = round(10.^2*(prob2(1,1) - yrrng))/10.^2;
+    eyr = round(10.^2*(prob2(1,1) - yrrng))/10.^2;
     
     ind = find(curvecal >= syr & curvecal <= eyr);
     curvecal = curvecal(ind);
@@ -283,8 +290,8 @@ elseif strcmpi(yeartype,'BCE/CE') == 1
     prob2 = prob(cumsum(prob(:,2)) > 0.001 & cumsum(prob(:,2)) < 0.999);
     prob2 = flipud(prob2);
     yrrng = (prob2(end,1) - prob2(1,1))/2;
-    syr = roundn(prob2(1,1) - yrrng, 2);
-    eyr = roundn(prob2(end,1) + yrrng, 2);
+    syr = round(10.^2*(prob2(1,1) - yrrng))/10.^2;
+    eyr = round(10.^2*(prob2(1,1) - yrrng))/10.^2;
     
     curvecal = (curvecal-1950) * -1;
     ind = find(curvecal >= syr & curvecal <= eyr);
@@ -330,7 +337,7 @@ if strcmpi('intcal13',calcurve) == 1;
     axraw = axes;
     axes(axraw)
     
-    rd = load('IntCal13 raw data.txt');
+    rd = load('private/IntCal13 raw data.txt');
     
     rd_trees = rd(rd(:,1) >= 1 & rd(:,1) <= 8, :);
     rd_other = rd(rd(:,1) >= 9, :);
