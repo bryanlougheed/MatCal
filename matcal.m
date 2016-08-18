@@ -1,4 +1,4 @@
-function  [p95_4 p68_2 prob] = matcal(c14age, c14err, calcurve, yeartype, resage, reserr)    
+function  [p95_4 p68_2 prob] = matcal(c14age, c14err, calcurve, yeartype, varargin)    
 % [p68_2 p95_4 prob] = matcal(c14age, c14err, calcurve, yeartype, resage, reserr)
 %
 % Function for 14C age calibration using Bayesian statistical analysis of a
@@ -22,6 +22,8 @@ function  [p95_4 p68_2 prob] = matcal(c14age, c14err, calcurve, yeartype, resage
 %            marine curve.
 %            
 % reserr   = Optional. Specify 1 sigma uncertainty for resage (default = 0)
+%
+% plot     = Optional. Default is to plot. Specify 0 for no plot
 % 
 % --- Output parameters ---
 %
@@ -60,17 +62,40 @@ if nargin < 4
     error('Not enough input parameters (see help for instructions)')
 end
 
-extralabel = 1;
-switch nargin
-    case 4
-        resage = 0;
-        reserr = 0;
-        extralabel = 0;
-    case 5
-        extralabel = 1;
-        reserr = 0;
+%parse varargin
+
+p = inputParser;
+p.KeepUnmatched = true;
+p.CaseSensitive = false;
+p.FunctionName='matcal';
+
+defaultresage=0;
+defaultreserr=0;
+defaultprintme=1;
+
+if datenum(version('-date'))<datenum('May 19, 2013')
+    addParameter(p,'resage',defaultresage,@isnumeric);
+    addParameter(p,'reserr',defaultreserr,@isnumeric);
+    addParameter(p,'plot',defaultprintme,@isnumeric);
+else
+    addParamValue(p,'resage',defaultresage,@isnumeric);
+    addParamValue(p,'reserr',defaultreserr,@isnumeric);
+    addParamValue(p,'plot',defaultprintme,@isnumeric);
 end
 
+parse(p,varargin{:});
+resage=p.Results.resage
+reserr=p.Results.reserr
+plotme=p.Results.plot
+
+if resage==0
+    extralabel=0;
+    if reserr~=0
+        error('Please specify reservoir age when specifying reservoir error')
+    end
+else
+    extralabel=1;
+end
 
 % Cal curve case and symbols
 
@@ -298,269 +323,270 @@ elseif strcmpi(yeartype,'BCE/CE') == 1
       
 end
 
-figure(14)
-clf
+if plotme==1
+    figure(14)
+    clf
 
-%----- Plot ProbDistFunc
-axpdf = axes;
-axes(axpdf)
-area(prob(:,1),prob(:,2),'edgecolor','none')
-axpdfylims = ylim;
-axpdfxlims = xlim;
-area(prob(:,1),prob(:,2)*0.2,'edgecolor',[0 0 0],'facecolor',[0.9 0.9 0.9])
-hold on
-[M N] = size(p95_4);
-for i = 1:M
-    if strcmpi(yeartype,'Cal BP') == 1
-        area( prob(prob(:,1) <= p95_4(i,1) & prob(:,1) >= p95_4(i,2),1)  , prob(prob(:,1) <= p95_4(i,1) & prob(:,1) >= p95_4(i,2),2)*0.2,'edgecolor','none','facecolor',[0.5 0.5 0.6])
-    elseif strcmpi(yeartype,'BCE/CE') == 1
-        area( prob(prob(:,1) >= p95_4(i,1) & prob(:,1) <= p95_4(i,2),1)  , prob(prob(:,1) >= p95_4(i,1) & prob(:,1) <= p95_4(i,2),2)*0.2,'edgecolor','none','facecolor',[0.5 0.5 0.6])
-    end
-end
-%----- Plot cal curve
-axcurve = axes;
-axes(axcurve)
-xdata = curvecal;
-ydata = curve14c;
-onesig = curve1sig;
-fill([xdata' fliplr(xdata')],[ydata'+onesig' fliplr(ydata'-onesig')],[0.6 0.6 0.6],'edgecolor','none');
-hold on
-axcurveylims = ylim;
-axcurvexlims = [min(curvecal) max(curvecal)];
-
-%----- Plot raw data if intcal13 is selected
-if strcmpi('intcal13',calcurve) == 1;
-    
-    axraw = axes;
-    axes(axraw)
-    
-    rd = load('private/IntCal13 raw data.txt');
-    
-    rd_trees = rd(rd(:,1) >= 1 & rd(:,1) <= 8, :);
-    rd_other = rd(rd(:,1) >= 9, :);
-    
-    rd_trees = rd_trees(rd_trees(:,3) <= 13900, :);
-    rd_other = rd_other(rd_other(:,3) >= 13900, :);
-    
-    rd = [rd_trees; rd_other];
-    
-    if strcmpi(yeartype,'BCE/CE') == 1
-        rd(:,3) = (rd(:,3)-1950) * -1;
-        ind = find(rd(:,3) <= curvecal(1) & rd(:,3) >= curvecal(end));
-    else
-        ind = find(rd(:,3) >= curvecal(1) & rd(:,3) <= curvecal(end));
-    end
-    
-    raw13_cal = rd(ind,3);
-    raw13_calsigma = rd(ind,5);
-    raw13_14c = rd(ind,6);
-    raw13_14csigma = rd(ind,7);
-    
-    for i = 1:length(raw13_cal)       
-       
-        % x error bars
-        plot([raw13_cal(i)-raw13_calsigma(i) raw13_cal(i)+raw13_calsigma(i)],[raw13_14c(i) raw13_14c(i)],'-','color',[0.8 0.8 0.8])
-        
-        if i == 1
-            hold on
-        end
-                
-        % y error bars
-        plot([raw13_cal(i) raw13_cal(i)],[raw13_14c(i)-raw13_14csigma(i) raw13_14c(i)+raw13_14csigma(i)],'-','color',[0.8 0.8 0.8])
-        
-        ymaxes(i) = raw13_14c(i)+raw13_14csigma(i);
-        ymins(i) = raw13_14c(i)-raw13_14csigma(i);
-        
-    end
-    
-    axrawylims = [min(ymins) max(ymaxes)];
-    axrawxlims = xlim;
-    
-end
-
-%----- Plot 14C age normal distribution(s)
-axgauss = axes;
-axes(axgauss);
-
-gaussrange = [c14age-4*c14err:c14age+4*c14err];
-gauss = normpdf(gaussrange,c14age,c14err);
-
-gaussrangeorig = [c14ageorig-4*c14errorig:c14ageorig+4*c14errorig];
-gaussorig = normpdf(gaussrangeorig, c14ageorig, c14errorig);
-
-area(gauss, gaussrange);
-axgaussylims = ylim;
-axgaussxlims = xlim;
-area(gauss*0.2, gaussrange,'edgecolor','none','facecolor',[0.7 0.4 0.4]);
-hold on
-plot(gaussorig*0.2, gaussrangeorig,'linestyle','-','color',[0.7 0.4 0.4]);
-
-%----- set plot settings by axis, starting from back layer to front layer
-
-axes(axcurve)
-xlim(axcurvexlims)
-if strcmpi(yeartype, 'Cal BP') == 1
-    set(gca, 'XDir', 'reverse')
-end
-set(gca,'color','none')
-lab1 = ylabel('^1^4C yr BP');
-lab2 = xlabel(yearlabel);
-set( gca, 'TickDir', 'out' );
-if strcmpi('intcal13',calcurve) == 1;
-    ylim(axrawylims)
-else
-    ylim(axcurveylims)
-end
-yt=get(gca,'ytick');
-ytl=textscan(sprintf('%1.0f \n',yt),'%s','delimiter','');
-set(gca,'yticklabel',ytl{1})
-xt=get(gca,'xtick');
-xtl=textscan(sprintf('%1.0f \n',xt),'%s','delimiter','');
-set(gca,'xticklabel',xtl{1})
-
-axes(axpdf)
-set(gca,'color','none')
-xlim(axcurvexlims)
-ylim(axpdfylims)
-set(gca,'xticklabel',[]);
-set(gca,'xtick',[]);
-set(gca,'yticklabel',[]);
-if strcmpi(yeartype, 'Cal BP') == 1
-    set(gca, 'XDir', 'reverse')
-end
-set(gca,'ytick',[]);
-
-axes(axgauss)
-set(gca,'color','none')
-xlim(axgaussxlims)
-set(gca,'xticklabel',[]);
-set(gca,'xtick',[]);
-set(gca,'yticklabel',[]);
-set(gca,'ytick',[]);
-if strcmpi('intcal13',calcurve) == 1;
-    ylim(axrawylims)
-else
-    ylim(axcurveylims)
-end
-
-if strcmpi('intcal13',calcurve) == 1;
-    axes(axraw)
+    %----- Plot ProbDistFunc
+    axpdf = axes;
+    axes(axpdf)
+    area(prob(:,1),prob(:,2),'edgecolor','none')
+    axpdfylims = ylim;
+    axpdfxlims = xlim;
+    area(prob(:,1),prob(:,2)*0.2,'edgecolor',[0 0 0],'facecolor',[0.9 0.9 0.9])
     hold on
+    [M N] = size(p95_4);
+    for i = 1:M
+        if strcmpi(yeartype,'Cal BP') == 1
+            area( prob(prob(:,1) <= p95_4(i,1) & prob(:,1) >= p95_4(i,2),1)  , prob(prob(:,1) <= p95_4(i,1) & prob(:,1) >= p95_4(i,2),2)*0.2,'edgecolor','none','facecolor',[0.5 0.5 0.6])
+        elseif strcmpi(yeartype,'BCE/CE') == 1
+            area( prob(prob(:,1) >= p95_4(i,1) & prob(:,1) <= p95_4(i,2),1)  , prob(prob(:,1) >= p95_4(i,1) & prob(:,1) <= p95_4(i,2),2)*0.2,'edgecolor','none','facecolor',[0.5 0.5 0.6])
+        end
+    end
+    %----- Plot cal curve
+    axcurve = axes;
+    axes(axcurve)
+    xdata = curvecal;
+    ydata = curve14c;
+    onesig = curve1sig;
+    fill([xdata' fliplr(xdata')],[ydata'+onesig' fliplr(ydata'-onesig')],[0.6 0.6 0.6],'edgecolor','none');
+    hold on
+    axcurveylims = ylim;
+    axcurvexlims = [min(curvecal) max(curvecal)];
+
+    %----- Plot raw data if intcal13 is selected
+    if strcmpi('intcal13',calcurve) == 1;
+        
+        axraw = axes;
+        axes(axraw)
+        
+        rd = load('private/IntCal13 raw data.txt');
+        
+        rd_trees = rd(rd(:,1) >= 1 & rd(:,1) <= 8, :);
+        rd_other = rd(rd(:,1) >= 9, :);
+        
+        rd_trees = rd_trees(rd_trees(:,3) <= 13900, :);
+        rd_other = rd_other(rd_other(:,3) >= 13900, :);
+        
+        rd = [rd_trees; rd_other];
+        
+        if strcmpi(yeartype,'BCE/CE') == 1
+            rd(:,3) = (rd(:,3)-1950) * -1;
+            ind = find(rd(:,3) <= curvecal(1) & rd(:,3) >= curvecal(end));
+        else
+            ind = find(rd(:,3) >= curvecal(1) & rd(:,3) <= curvecal(end));
+        end
+        
+        raw13_cal = rd(ind,3);
+        raw13_calsigma = rd(ind,5);
+        raw13_14c = rd(ind,6);
+        raw13_14csigma = rd(ind,7);
+        
+        for i = 1:length(raw13_cal)       
+           
+            % x error bars
+            plot([raw13_cal(i)-raw13_calsigma(i) raw13_cal(i)+raw13_calsigma(i)],[raw13_14c(i) raw13_14c(i)],'-','color',[0.8 0.8 0.8])
+            
+            if i == 1
+                hold on
+            end
+                    
+            % y error bars
+            plot([raw13_cal(i) raw13_cal(i)],[raw13_14c(i)-raw13_14csigma(i) raw13_14c(i)+raw13_14csigma(i)],'-','color',[0.8 0.8 0.8])
+            
+            ymaxes(i) = raw13_14c(i)+raw13_14csigma(i);
+            ymins(i) = raw13_14c(i)-raw13_14csigma(i);
+            
+        end
+        
+        axrawylims = [min(ymins) max(ymaxes)];
+        axrawxlims = xlim;
+        
+    end
+
+    %----- Plot 14C age normal distribution(s)
+    axgauss = axes;
+    axes(axgauss);
+
+    gaussrange = [c14age-4*c14err:c14age+4*c14err];
+    gauss = normpdf(gaussrange,c14age,c14err);
+
+    gaussrangeorig = [c14ageorig-4*c14errorig:c14ageorig+4*c14errorig];
+    gaussorig = normpdf(gaussrangeorig, c14ageorig, c14errorig);
+
+    area(gauss, gaussrange);
+    axgaussylims = ylim;
+    axgaussxlims = xlim;
+    area(gauss*0.2, gaussrange,'edgecolor','none','facecolor',[0.7 0.4 0.4]);
+    hold on
+    plot(gaussorig*0.2, gaussrangeorig,'linestyle','-','color',[0.7 0.4 0.4]);
+
+    %----- set plot settings by axis, starting from back layer to front layer
+
+    axes(axcurve)
+    xlim(axcurvexlims)
     if strcmpi(yeartype, 'Cal BP') == 1
         set(gca, 'XDir', 'reverse')
     end
     set(gca,'color','none')
+    lab1 = ylabel('^1^4C yr BP');
+    lab2 = xlabel(yearlabel);
+    set( gca, 'TickDir', 'out' );
+    if strcmpi('intcal13',calcurve) == 1;
+        ylim(axrawylims)
+    else
+        ylim(axcurveylims)
+    end
+    yt=get(gca,'ytick');
+    ytl=textscan(sprintf('%1.0f \n',yt),'%s','delimiter','');
+    set(gca,'yticklabel',ytl{1})
+    xt=get(gca,'xtick');
+    xtl=textscan(sprintf('%1.0f \n',xt),'%s','delimiter','');
+    set(gca,'xticklabel',xtl{1})
+
+    axes(axpdf)
+    set(gca,'color','none')
     xlim(axcurvexlims)
-    ylim(axrawylims)
+    ylim(axpdfylims)
+    set(gca,'xticklabel',[]);
+    set(gca,'xtick',[]);
+    set(gca,'yticklabel',[]);
+    if strcmpi(yeartype, 'Cal BP') == 1
+        set(gca, 'XDir', 'reverse')
+    end
+    set(gca,'ytick',[]);
+
+    axes(axgauss)
+    set(gca,'color','none')
+    xlim(axgaussxlims)
     set(gca,'xticklabel',[]);
     set(gca,'xtick',[]);
     set(gca,'yticklabel',[]);
     set(gca,'ytick',[]);
-else
-    axes(axpdf)
+    if strcmpi('intcal13',calcurve) == 1;
+        ylim(axrawylims)
+    else
+        ylim(axcurveylims)
+    end
+
+    if strcmpi('intcal13',calcurve) == 1;
+        axes(axraw)
+        hold on
+        if strcmpi(yeartype, 'Cal BP') == 1
+            set(gca, 'XDir', 'reverse')
+        end
+        set(gca,'color','none')
+        xlim(axcurvexlims)
+        ylim(axrawylims)
+        set(gca,'xticklabel',[]);
+        set(gca,'xtick',[]);
+        set(gca,'yticklabel',[]);
+        set(gca,'ytick',[]);
+    else
+        axes(axpdf)
+    end
+
+    %----- Plot some text on the final axis
+
+    if strcmpi(yeartype, 'Cal BP') == 1
+        
+        xlims = xlim;
+        ylims = ylim;
+        
+        xaxrange = xlims(2) - xlims(1);
+        yaxrange = ylims(2) - ylims(1);
+        
+        [M N] = size(p95_4);
+        
+        text(xlims(2)-0.63*xaxrange, ylims(2)-0.03*yaxrange, ['^1^4C date: ',num2str(c14ageorig),' \pm ',num2str(c14errorig),' ^1^4C yr BP'])
+        
+        if extralabel == 1;
+            text(xlims(2)-0.63*xaxrange, ylims(2)-0.06*yaxrange, [reslabel,': ',num2str(resage),' \pm ',num2str(reserr), ' ^1^4C yr'])
+            ypos = 0.11;
+        else
+            ypos = 0.08;
+        end
+        
+        if M == 1
+            text(xlims(2)-0.63*xaxrange, ylims(2)-ypos*yaxrange, ['Cal age 95.45% HPD interval:'])
+        else
+            text(xlims(2)-0.63*xaxrange, ylims(2)-ypos*yaxrange, ['Cal age 95.45% HPD intervals:'])
+        end
+        
+        for i = 1:M
+            ypos = ypos+0.03;
+            text(xlims(2)-0.63*xaxrange, ylims(2)-ypos*yaxrange, [num2str(floor(p95_4(i,3)*1000)/10),'%: ',num2str(p95_4(i,1)),' to ',num2str(p95_4(i,2)),' cal yr BP'])
+        end
+        
+        text(xlims(2)-0.02*xaxrange, ylims(2)-0.03*yaxrange, ['MatCal 1.0 (B.C. Lougheed)'])
+        text(xlims(2)-0.02*xaxrange, ylims(2)-0.06*yaxrange, [calcurve, ' ', cite])
+        
+    elseif strcmpi(yeartype,'BCE/CE')
+        
+        xlims = xlim;
+        ylims = ylim;
+        
+        xaxrange = abs( xlims(1) - xlims(2) );
+        yaxrange = ylims(2) - ylims(1);
+        
+        [M N] = size(p95_4);
+        
+        text(xlims(1)+0.63*xaxrange, ylims(2)-0.03*yaxrange, ['^1^4C date: ',num2str(c14ageorig),' \pm ',num2str(c14errorig),' ^1^4C yr BP'])
+        
+        if extralabel == 1;
+            text(xlims(1)+0.63*xaxrange, ylims(2)-0.06*yaxrange, [reslabel,': ',num2str(resage),' \pm ',num2str(reserr), ' ^1^4C yr'])
+            ypos = 0.11;
+        else
+            ypos = 0.08;
+        end
+        
+        if M == 1
+            text(xlims(1)+0.63*xaxrange, ylims(2)-ypos*yaxrange, ['Cal age 95.45% HPD interval:'])
+        else
+            text(xlims(1)+0.63*xaxrange, ylims(2)-ypos*yaxrange, ['Cal age 95.45% HPD intervals:'])
+        end
+        
+        for i = 1:M
+            ypos = ypos+0.03;
+            text(xlims(1)+0.63*xaxrange, ylims(2)-ypos*yaxrange, [num2str(floor(p95_4(i,3)*1000)/10),'%: ',num2str(p95_4(i,1)),' to ',num2str(p95_4(i,2)),' ',yearlabel])
+        end
+        
+        text(xlims(1)+0.02*xaxrange, ylims(2)-0.03*yaxrange, ['MatCal 1.0 (B.C. Lougheed)'])
+        text(xlims(1)+0.02*xaxrange, ylims(2)-0.06*yaxrange, [calcurve, ' ', cite])
+        
+    end
+
+    if prob(1,2) > 0.000001 || prob(end,2) > 0.000001
+        title('Warning! Calibrated age may exceed limits of calibration curve.')
+    end
+
+    %----- Fix all font sizes
+
+    set(findall(gcf,'-property','FontSize'),'FontSize',8)
+    set(lab1,'FontSize',10)
+    set(lab2,'FontSize',10)
+
+    %----- Prep plot for export
+
+    % set paper size (cm)
+    set(gcf,'PaperUnits','centimeters')
+    Y = 18;
+    X = 18;
+    set(gcf, 'PaperSize',[X Y])
+    % set figure size (cm)
+    xSize = 16;
+    ySize = 16; 
+    % put figure in centre of paper
+    xLeft = (X-xSize)/2;
+    yBottom = (Y-ySize)/2;
+    set(gcf,'PaperPosition',[xLeft yBottom xSize ySize])
+    % make background white
+    set(gcf,'InvertHardcopy','on');
+    set(gcf,'color',1*[1 1 1]);
+
+    % uncomment line below to automatically print Adobe PDF to working directory
+    % print(figure(14), '-dpdf', ['MatCal ',num2str(c14ageorig),'±',num2str(c14errorig),'.pdf']);
 end
-
-%----- Plot some text on the final axis
-
-if strcmpi(yeartype, 'Cal BP') == 1
-    
-    xlims = xlim;
-    ylims = ylim;
-    
-    xaxrange = xlims(2) - xlims(1);
-    yaxrange = ylims(2) - ylims(1);
-    
-    [M N] = size(p95_4);
-    
-    text(xlims(2)-0.63*xaxrange, ylims(2)-0.03*yaxrange, ['^1^4C date: ',num2str(c14ageorig),' \pm ',num2str(c14errorig),' ^1^4C yr BP'])
-    
-    if extralabel == 1;
-        text(xlims(2)-0.63*xaxrange, ylims(2)-0.06*yaxrange, [reslabel,': ',num2str(resage),' \pm ',num2str(reserr), ' ^1^4C yr'])
-        ypos = 0.11;
-    else
-        ypos = 0.08;
-    end
-    
-    if M == 1
-        text(xlims(2)-0.63*xaxrange, ylims(2)-ypos*yaxrange, ['Cal age 95.45% HPD interval:'])
-    else
-        text(xlims(2)-0.63*xaxrange, ylims(2)-ypos*yaxrange, ['Cal age 95.45% HPD intervals:'])
-    end
-    
-    for i = 1:M
-        ypos = ypos+0.03;
-        text(xlims(2)-0.63*xaxrange, ylims(2)-ypos*yaxrange, [num2str(floor(p95_4(i,3)*1000)/10),'%: ',num2str(p95_4(i,1)),' to ',num2str(p95_4(i,2)),' cal yr BP'])
-    end
-    
-    text(xlims(2)-0.02*xaxrange, ylims(2)-0.03*yaxrange, ['MatCal 1.0 (B.C. Lougheed)'])
-    text(xlims(2)-0.02*xaxrange, ylims(2)-0.06*yaxrange, [calcurve, ' ', cite])
-    
-elseif strcmpi(yeartype,'BCE/CE')
-    
-    xlims = xlim;
-    ylims = ylim;
-    
-    xaxrange = abs( xlims(1) - xlims(2) );
-    yaxrange = ylims(2) - ylims(1);
-    
-    [M N] = size(p95_4);
-    
-    text(xlims(1)+0.63*xaxrange, ylims(2)-0.03*yaxrange, ['^1^4C date: ',num2str(c14ageorig),' \pm ',num2str(c14errorig),' ^1^4C yr BP'])
-    
-    if extralabel == 1;
-        text(xlims(1)+0.63*xaxrange, ylims(2)-0.06*yaxrange, [reslabel,': ',num2str(resage),' \pm ',num2str(reserr), ' ^1^4C yr'])
-        ypos = 0.11;
-    else
-        ypos = 0.08;
-    end
-    
-    if M == 1
-        text(xlims(1)+0.63*xaxrange, ylims(2)-ypos*yaxrange, ['Cal age 95.45% HPD interval:'])
-    else
-        text(xlims(1)+0.63*xaxrange, ylims(2)-ypos*yaxrange, ['Cal age 95.45% HPD intervals:'])
-    end
-    
-    for i = 1:M
-        ypos = ypos+0.03;
-        text(xlims(1)+0.63*xaxrange, ylims(2)-ypos*yaxrange, [num2str(floor(p95_4(i,3)*1000)/10),'%: ',num2str(p95_4(i,1)),' to ',num2str(p95_4(i,2)),' ',yearlabel])
-    end
-    
-    text(xlims(1)+0.02*xaxrange, ylims(2)-0.03*yaxrange, ['MatCal 1.0 (B.C. Lougheed)'])
-    text(xlims(1)+0.02*xaxrange, ylims(2)-0.06*yaxrange, [calcurve, ' ', cite])
-    
-end
-
-if prob(1,2) > 0.000001 || prob(end,2) > 0.000001
-    title('Warning! Calibrated age may exceed limits of calibration curve.')
-end
-
-%----- Fix all font sizes
-
-set(findall(gcf,'-property','FontSize'),'FontSize',8)
-set(lab1,'FontSize',10)
-set(lab2,'FontSize',10)
-
-%----- Prep plot for export
-
-% set paper size (cm)
-set(gcf,'PaperUnits','centimeters')
-Y = 18;
-X = 18;
-set(gcf, 'PaperSize',[X Y])
-% set figure size (cm)
-xSize = 16;
-ySize = 16; 
-% put figure in centre of paper
-xLeft = (X-xSize)/2;
-yBottom = (Y-ySize)/2;
-set(gcf,'PaperPosition',[xLeft yBottom xSize ySize])
-% make background white
-set(gcf,'InvertHardcopy','on');
-set(gcf,'color',1*[1 1 1]);
-
-% uncomment line below to automatically print Adobe PDF to working directory
-% print(figure(14), '-dpdf', ['MatCal ',num2str(c14ageorig),'±',num2str(c14errorig),'.pdf']);
-
 
 end
 
