@@ -17,13 +17,15 @@ function  [p95_4 p68_2 prob] = matcal(c14age, c14err, calcurve, yeartype, vararg
 % yeartype = String specifying how MatCal will report calibrated age.
 %            Choices are 'Cal BP' or 'BCE/CE'.
 %
-% resage   = Optional. Specify reservoir age in 14C yr (default = 0).
-%            R(t) in the case of atmospheric curve, delta-R in the case of
-%            marine curve.
+% resage   = Optional (parameter names and value). Specify reservoir 
+%            age in 14C yr (default = 0). R(t) in the case of
+%            atmospheric curve, delta-R in the case of marine curve.
 %            
-% reserr   = Optional. Specify 1 sigma uncertainty for resage (default = 0)
+% reserr   = Optional (parameter names and value). Specify 1 sigma
+%            uncertainty for resage (default = 0)
 %
-% plot     = Optional. Default is to plot. Specify 0 for no plot
+% plot     = Optional parameter names and value). Default is to plot.
+%            Specify 0 for no plot
 % 
 % --- Output parameters ---
 %
@@ -84,9 +86,9 @@ else
 end
 
 parse(p,varargin{:});
-resage=p.Results.resage
-reserr=p.Results.reserr
-plotme=p.Results.plot
+resage=p.Results.resage;
+reserr=p.Results.reserr;
+plotme=p.Results.plot;
 
 if resage==0
     extralabel=0;
