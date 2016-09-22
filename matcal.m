@@ -75,7 +75,7 @@ defaultresage=0;
 defaultreserr=0;
 defaultprintme=1;
 
-if datenum(version('-date'))<datenum('May 19, 2013')
+if datenum(version('-date'))>datenum('May 19, 2013')
     addParameter(p,'resage',defaultresage,@isnumeric);
     addParameter(p,'reserr',defaultreserr,@isnumeric);
     addParameter(p,'plot',defaultprintme,@isnumeric);
