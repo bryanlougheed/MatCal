@@ -1,5 +1,5 @@
 % IntCal13 raw data from http://intcal.qub.ac.uk/intcal13/						
-%... 1	2	3	4	5	6	7
+%...Col 1	2	3	4	5	6	7
 % setno	division	calage	calspan	calsig	c14age	c14sig
 1	1	64	1	0	114	46
 1	1	63	1	0	88	42
