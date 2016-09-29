@@ -1,8 +1,8 @@
 function  [p95_4 p68_2 calprob] = matcal(c14age, c14err, calcurve, yeartype, varargin)    
-% [p95_4 p68_2 prob] = matcal(c14age, c14err, calcurve, yeartype)
+% [p95_4 p68_2 calprob] = matcal(c14age, c14err, calcurve, yeartype)
 %
-% Function for 14C age calibration using Bayesian statistical analysis of a
-% probability density function of calibrated age.
+% Function for 14C age calibration using Bayesian higher posterior
+% density analysis of a probability density function of calibrated age.
 %
 % --- Required input parameters ---
 %
@@ -85,7 +85,7 @@ function  [p95_4 p68_2 calprob] = matcal(c14age, c14err, calcurve, yeartype, var
 %
 % ------------
 %
-% MatCal v 2.0 (24/09/2016)
+% MatCal build 21 (24/09/2016)
 % Written using MatLab 2012a. Feel free to modify for own use.
 % Use of this script is at your own risk.
 
@@ -190,11 +190,11 @@ if strcmp(curvetype, 'atm') == 1 && resage == 0;
 elseif strcmp(curvetype, 'atm') == 1 && resage > 0;
     extralabel = 1;
     reslabel = 'R(t)';
-    plotextragauss = 1;
+    plot14Coriginal = 1;
 elseif strcmp(curvetype, 'mar') == 1
     extralabel = 1;
     reslabel = '\DeltaR';
-    plotextragauss = 1;
+    plot14Coriginal = 1;
 end
 
 
@@ -449,14 +449,14 @@ if plotme==1
         for i = 1:length(raw13_cal)       
            
             % x error bars
-            plot([raw13_cal(i)-raw13_calsigma(i) raw13_cal(i)+raw13_calsigma(i)],[raw13_14c(i) raw13_14c(i)],'-','color',[203/256 214/256 204/256])
+            plot([raw13_cal(i)-raw13_calsigma(i) raw13_cal(i)+raw13_calsigma(i)],[raw13_14c(i) raw13_14c(i)],'-','color',[132/256 193/256 150/256])
             
             if i == 1
                 hold on
             end
                     
             % y error bars
-            plot([raw13_cal(i) raw13_cal(i)],[raw13_14c(i)-raw13_14csigma(i) raw13_14c(i)+raw13_14csigma(i)],'-','color',[203/256 214/256 204/256])
+            plot([raw13_cal(i) raw13_cal(i)],[raw13_14c(i)-raw13_14csigma(i) raw13_14c(i)+raw13_14csigma(i)],'-','color',[132/256 193/256 150/256])
             
             ymaxes(i) = raw13_14c(i)+raw13_14csigma(i);
             ymins(i) = raw13_14c(i)-raw13_14csigma(i);
@@ -481,7 +481,7 @@ if plotme==1
     area(gauss, gaussrange);
     axgaussylims = ylim;
     axgaussxlims = xlim;
-    if exist('plotextragauss','var') == 1
+    if exist('plot14Coriginal','var') == 1
         area(gaussorig*0.2, gaussrangeorig,'edgecolor','none','facecolor',[0.8 0.5 0.5]);
         hold on
     end
@@ -631,7 +631,7 @@ if plotme==1
     set(findall(gcf,'-property','FontSize'),'FontSize',fontsize)
     set(lab1,'FontWeight','bold')
     set(lab2,'FontWeight','bold')
-    set(gcf,'color',1*[1 1 1]);
+    set(gcf,'color',[1 1 1]);
     
     %----- Prep plot for export
     if printme == 1
@@ -652,7 +652,7 @@ if plotme==1
         set(gcf,'PaperPosition',[xLeft yBottom xSize ySize])
         % make background white
         set(gcf,'InvertHardcopy','on');
-        set(gcf,'color',1*[1 1 1]);
+        set(gcf,'color',[1 1 1]);
         
         print(figure(14), '-dpdf', ['MatCal ',num2str(c14ageorig),char(177),num2str(c14errorig),'.pdf']);
     end
