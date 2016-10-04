@@ -85,7 +85,7 @@ function  [p95_4 p68_2 calprob] = matcal(c14age, c14err, calcurve, yeartype, var
 %
 % ------------
 %
-% MatCal build 23 (04/10/2016)
+% MatCal build 23 (2016-10-04)
 % Written using MatLab 2012a. Feel free to modify for own use.
 % Use of this script is at your own risk.
 
