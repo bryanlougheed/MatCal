@@ -15,7 +15,7 @@ function  [p95_4 p68_2 calprob] = matcal(c14age, c14err, calcurve, yeartype, var
 %            'IntCal04', 'Marine04', 'SHCal04, 'IntCal98', 'Marine98'
 %            (Not case sensitive.)
 %
-% yeartype:  String specifying how MatCal will report calibrated age.
+% yeartype:  String specifying how to report calibrated age.
 %            Choices are 'CalBP' or 'BCE/CE'. (Not case sensitive)
 %
 % --- Optional input parameters ---
@@ -38,8 +38,8 @@ function  [p95_4 p68_2 calprob] = matcal(c14age, c14err, calcurve, yeartype, var
 %
 % saveplot:  Optional (parameter name and value). Save an Adobe PDF of
 %            the calibration plot to your working directory. Specify 1 
-%            to save and 0 not to save. Will not function if plotting
-%            has been disabled. (default = 0)
+%            to save and 0 not to save. (default = 0) Will be ignored
+%            if plotting has been disabled.
 %            e.g. 'saveplot',1 to save to your working directory.
 %
 % plotsize:  Optional (parameter name and value). Set the width and height
@@ -85,7 +85,7 @@ function  [p95_4 p68_2 calprob] = matcal(c14age, c14err, calcurve, yeartype, var
 %
 % ------------
 %
-% MatCal build 21 (24/09/2016)
+% MatCal build 23 (04/10/2016)
 % Written using MatLab 2012a. Feel free to modify for own use.
 % Use of this script is at your own risk.
 
@@ -262,9 +262,14 @@ end
 % normalise to 1
 calprob(:,2) = calprob(:,2) / sum(calprob(:,2)); 
 
-% throw warning if PDF does not tail to zero on both sides (exceeds cal curve)
+% throw warning if 4sigma of 14C age exceeds 14C age limits in cal curve
+if (c14age + 4*c14err) > max(curve14c) || (c14age - 4*c14err) < min(curve14c) 
+    warning(['4sigma range of 14C age ',num2str(c14ageorig),char(177),num2str(c14errorig),' may exceed limits of calibration curve'])
+end
+
+% also throw warning if cal age PDF does not tail to zero at ends of cal curve (exceeds cal curve)
 if calprob(1,2) > 0.000001 || calprob(end,2) > 0.000001
-    warning(['Calibrated age for 14C age ',num2str(c14ageorig),char(177),num2str(c14errorig),' may exceed limits of calibration curve'])
+    warning(['Calibrated age PDF for 14C age ',num2str(c14ageorig),char(177),num2str(c14errorig),' may exceed limits of calibration curve'])
 end
 
 % find 1sig and 2sig intervals using highest posterior density (HPD)
@@ -623,7 +628,9 @@ if plotme==1
     end
 
     if calprob(1,2) > 0.000001 || calprob(end,2) > 0.000001
-        title('Warning! Calibrated age may exceed limits of calibration curve.')
+        title('Warning! Age calibration may exceed limits of calibration curve.')
+    elseif (c14age + 4*c14err) > max(curve14c) || (c14age - 4*c14err) < min(curve14c) 
+        title('Warning! Age calibration may exceed limits of calibration curve.')
     end
 
     %----- Fix fonts and appearance
