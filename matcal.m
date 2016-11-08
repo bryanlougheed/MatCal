@@ -4,6 +4,11 @@ function  [p95_4 p68_2 calprob] = matcal(c14age, c14err, calcurve, yeartype, var
 % Function for 14C age calibration using Bayesian higher posterior
 % density analysis of a probability density function of calibrated age.
 %
+% Please see manuscript for more detailed information:
+% Lougheed, B.C. & Obrochta, S.P. (2016). MatCal: Open Source Bayesian
+% 14C Age Calibration in Matlab. Journal of Open Research Software. 4(1),
+% p.e42. DOI: http://doi.org/10.5334/jors.130
+%
 % --- Required input parameters ---
 %
 % c14age:    Lab 14C determination in 14C yr BP.
@@ -85,9 +90,10 @@ function  [p95_4 p68_2 calprob] = matcal(c14age, c14err, calcurve, yeartype, var
 %
 % ------------
 %
-% MatCal build 23 (2016-10-04)
-% Written using MatLab 2012a. Feel free to modify for own use.
-% Use of this script is at your own risk.
+% MatCal 2.1 (2016-11-08)
+% Written using MatLab 2012a.
+% Please see manuscript for license information:
+% http://doi.org/10.5334/jors.130
 
 if nargin < 4
     error('Not enough input parameters (see help for instructions)')
