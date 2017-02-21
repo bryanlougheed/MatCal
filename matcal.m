@@ -1,4 +1,4 @@
-function  [p95_4 p68_2 calprob] = matcal(c14age, c14err, calcurve, yeartype, varargin)    
+function  [p95_4 p68_2 calprob] = matcal(c14age, c14err, calcurve, yeartype, varargin)
 % [p95_4 p68_2 calprob] = matcal(c14age, c14err, calcurve, yeartype)
 %
 % Function for 14C age calibration using Bayesian higher posterior
@@ -25,24 +25,25 @@ function  [p95_4 p68_2 calprob] = matcal(c14age, c14err, calcurve, yeartype, var
 %
 % --- Optional input parameters ---
 %
-% resage:    Optional (parameter name and value). Specify reservoir 
+% resage:    Optional (parameter name and value). Specify reservoir
 %            age in 14C yr. R(t) in the case of atmospheric calibration
 %            curve, delta-R in the case of marine curve. (default = 0)
 %            e.g. 'resage',320 for a reservoir age of 320
-%            
+%
 % reserr:    Optional (parameter name and value). Specify a 1 sigma
 %            uncertainty for your chosen resage (default = 0)
 %            e.g. 'reserr',50 for an uncertainty of 50
 %
 % plot:      Optional (parameter name and value). Return a calibration
 %            plot of the to Figure 14. The plot displays the 1 and 2
-%            sigma ranges of the calibration curve. The calibraiton 
+%            sigma ranges of the calibration curve. The calibraiton
 %            curve raw data is also shown if IntCal13 is selected.
-%            Specify 1 to plot and 0 not to plot. (default = 1)
+%            Specify 1 to plot and 0 not to plot. (default = 1 for Matlab
+%            users; default = 0 for Octave users)
 %            e.g. 'plot',0 not to plot
 %
 % saveplot:  Optional (parameter name and value). Save an Adobe PDF of
-%            the calibration plot to your working directory. Specify 1 
+%            the calibration plot to your working directory. Specify 1
 %            to save and 0 not to save. (default = 0) Will be ignored
 %            if plotting has been disabled.
 %            e.g. 'saveplot',1 to save to your working directory.
@@ -55,22 +56,22 @@ function  [p95_4 p68_2 calprob] = matcal(c14age, c14err, calcurve, yeartype, var
 %            size in the output plot. (default = 8)
 %            e.g. 'fontsize',12 for a font size of 12.
 %
-% 
+%
 % --- Output data ---
 %
 % p95_4:     n by 3 matrix containing 95.45% calibrated age probability
-%            range interval(s) calculated using highest posterior density. 
-%            Each row contains a probability range in Cols 1 and 2, and 
-%            the associated probability for that range in Col 3. 
+%            range interval(s) calculated using highest posterior density.
+%            Each row contains a probability range in Cols 1 and 2, and
+%            the associated probability for that range in Col 3.
 %            Probabilities are normalised to between zero and one.
 %
 % p68_2:     Same as p95_4, but for the 68.27% calibrated range.
 %
-% calprob:   n by 2 matrix containing an annualised calibrated age 
-%            probability density function for implementation in, e.g., 
+% calprob:   n by 2 matrix containing an annualised calibrated age
+%            probability density function for implementation in, e.g.,
 %            age modelling. n is the annualised length of the chosen
-%            calibration curve. Col 1 is a series of annual cal ages, 
-%            Col 2 contains their associated probability. Probabilities 
+%            calibration curve. Col 1 is a series of annual cal ages,
+%            Col 2 contains their associated probability. Probabilities
 %            are normalised to between zero and one.
 %
 % --- Functional examples ---
@@ -86,11 +87,11 @@ function  [p95_4 p68_2 calprob] = matcal(c14age, c14err, calcurve, yeartype, var
 %
 % [p95_4 p68_2 prob] = matcal(1175, 30, 'IntCal13, 'CalBP', 'plot', 0)
 % Calibrate a 14C age of 1175±50 14C yr BP using IntCal13, with output in
-% Cal BP and disable the plot window. 
+% Cal BP and disable the plot window.
 %
 % ------------
 %
-% MatCal 2.1 (2016-11-08)
+% MatCal 2.2 (2017-02-20)
 % Written using MatLab 2012a.
 % Please see manuscript for license information:
 % http://doi.org/10.5334/jors.130
@@ -113,20 +114,30 @@ defaultprintme=0;
 defaultplotsize=16;
 defaultfontsize=8;
 
-if datenum(version('-date'))>datenum('May 19, 2013')
-    addParameter(p,'resage',defaultresage,@isnumeric);
-    addParameter(p,'reserr',defaultreserr,@isnumeric);
-    addParameter(p,'plot',defaultplotme,@isnumeric);
-    addParameter(p,'saveplot',defaultprintme,@isnumeric);
-    addParameter(p,'plotsize',defaultplotsize,@isnumeric);
-    addParameter(p,'fontsize',defaultfontsize,@isnumeric);
-else
+if exist('OCTAVE_VERSION', 'builtin') ~= 0;
+    defaultplotme = 0;
     addParamValue(p,'resage',defaultresage,@isnumeric);
     addParamValue(p,'reserr',defaultreserr,@isnumeric);
     addParamValue(p,'plot',defaultplotme,@isnumeric);
     addParamValue(p,'saveplot',defaultprintme,@isnumeric);
     addParamValue(p,'plotsize',defaultplotsize,@isnumeric);
     addParamValue(p,'fontsize',defaultfontsize,@isnumeric);
+else
+    if datenum(version('-date'))>datenum('May 19, 2013')
+        addParameter(p,'resage',defaultresage,@isnumeric);
+        addParameter(p,'reserr',defaultreserr,@isnumeric);
+        addParameter(p,'plot',defaultplotme,@isnumeric);
+        addParameter(p,'saveplot',defaultprintme,@isnumeric);
+        addParameter(p,'plotsize',defaultplotsize,@isnumeric);
+        addParameter(p,'fontsize',defaultfontsize,@isnumeric);
+    else
+        addParamValue(p,'resage',defaultresage,@isnumeric);
+        addParamValue(p,'reserr',defaultreserr,@isnumeric);
+        addParamValue(p,'plot',defaultplotme,@isnumeric);
+        addParamValue(p,'saveplot',defaultprintme,@isnumeric);
+        addParamValue(p,'plotsize',defaultplotsize,@isnumeric);
+        addParamValue(p,'fontsize',defaultfontsize,@isnumeric);
+    end
 end
 
 parse(p,varargin{:});
@@ -212,7 +223,7 @@ else
     error(['Please specify a valid year type (see help for options)'])
 end
 
-matcalvers = 'MatCal 2.0 (Lougheed and Obrochta, 2016)';
+matcalvers = 'MatCal 2.1 (Lougheed and Obrochta, 2016)';
 
 % correct for reservoir age and store original ages in memory
 
@@ -251,25 +262,25 @@ calprob = NaN(length(hicurvecal),2);
 
 z = 0;
 for i = 1:length(hicurvecal);
-
+    
     z = z + 1;
     
-    % equation from e.g. p.261 in Bronk Ramsey, 2008. doi:10.1111/j.1475-4754.2008.00394.x        
-    % split equation into parts for sanity's sake 
+    % equation from e.g. p.261 in Bronk Ramsey, 2008. doi:10.1111/j.1475-4754.2008.00394.x
+    % split equation into parts for sanity's sake
     a = ( f14age - hicurvef14(i) )^2;
     b = 2 * (f14err^2 + hicurvef14err(i)^2);
     c = sqrt(f14err^2 + hicurvef14err(i)^2);
     calprob(z,2) = exp(-a/b) / c;
     
     calprob(z,1) = hicurvecal(i);
-        
+    
 end
 
 % normalise to 1
-calprob(:,2) = calprob(:,2) / sum(calprob(:,2)); 
+calprob(:,2) = calprob(:,2) / sum(calprob(:,2));
 
 % throw warning if 4sigma of 14C age exceeds 14C age limits in cal curve
-if (c14age + 4*c14err) > max(curve14c) || (c14age - 4*c14err) < min(curve14c) 
+if (c14age + 4*c14err) > max(curve14c) || (c14age - 4*c14err) < min(curve14c)
     warning(['4sigma range of 14C age ',num2str(c14ageorig),char(177),num2str(c14errorig),' may exceed limits of calibration curve'])
 end
 
@@ -305,14 +316,14 @@ else
         indy1(z,1) = ind1(i);
         z = z + 1;
         indy1(z,1) = ind1(i)+1;
-    end 
+    end
     indy1 = [ 1 ; indy1; length(hpd68_2(:,1)) ];
     z=0;
     for i = 2:2:length(indy1)
         z = z+1;
         p68_2(z,1) = hpd68_2(indy1(i),1);
         p68_2(z,2) = hpd68_2(indy1(i-1),1);
-        p68_2(z,3) = sum(hpd68_2(indy1(i-1):indy1(i),2));    
+        p68_2(z,3) = sum(hpd68_2(indy1(i-1):indy1(i),2));
     end
     p68_2 = flipud(p68_2);
 end
@@ -337,14 +348,14 @@ else
         indy2(z,1) = ind2(i);
         z = z + 1;
         indy2(z,1) = ind2(i)+1;
-    end 
+    end
     indy2 = [ 1 ; indy2; length(hpd95_4(:,1)) ];
     z=0;
     for i = 2:2:length(indy2)
         z = z+1;
         p95_4(z,1) = hpd95_4(indy2(i),1);
         p95_4(z,2) = hpd95_4(indy2(i-1),1);
-        p95_4(z,3) = sum(hpd95_4(indy2(i-1):indy2(i),2));    
+        p95_4(z,3) = sum(hpd95_4(indy2(i-1):indy2(i),2));
     end
     p95_4 = flipud(p95_4);
 end
@@ -369,14 +380,14 @@ if strcmpi(yeartype,'Cal BP') == 1 || strcmpi(yeartype,'CalBP') == 1
     ind = find(curvecal >= syr & curvecal <= eyr);
     curvecal = curvecal(ind);
     curve14c = curve14c(ind);
-    curve14cerr = curve14cerr(ind); 
-  
+    curve14cerr = curve14cerr(ind);
+    
 elseif strcmpi(yeartype,'BCE/CE') == 1
     
     calprob2 = calprob(cumsum(calprob(:,2)) > 0.001 & cumsum(calprob(:,2)) < 0.999);
     calprob2 = flipud(calprob2);
     yrrng = (calprob2(end,1) - calprob2(1,1))/2;
-   
+    
     % round to nearest hundred for nice plot limits
     syr = (10^2) * round((calprob2(1,1)-yrrng) / (10^2));
     eyr = (10^2) * round((calprob2(end,1)+yrrng) / (10^2));
@@ -386,13 +397,13 @@ elseif strcmpi(yeartype,'BCE/CE') == 1
     curvecal = curvecal(ind);
     curve14c = curve14c(ind);
     curve14cerr = curve14cerr(ind);
-      
+    
 end
 
 if plotme==1
     figure(14)
     clf
-
+    
     %----- Plot ProbDistFunc
     axpdf = axes;
     axes(axpdf)
@@ -428,7 +439,7 @@ if plotme==1
     fill([xdata' fliplr(xdata')],[ydata'+onesig' fliplr(ydata'-onesig')],[0.6 0.6 0.6],'edgecolor','none');
     axcurveylims = ylim;
     axcurvexlims = [min(curvecal) max(curvecal)];
-
+    
     %----- Plot raw data if intcal13 is selected
     if strcmpi('intcal13',calcurve) == 1;
         
@@ -457,15 +468,15 @@ if plotme==1
         raw13_14c = rd(ind,6);
         raw13_14csigma = rd(ind,7);
         
-        for i = 1:length(raw13_cal)       
-           
+        for i = 1:length(raw13_cal)
+            
             % x error bars
             plot([raw13_cal(i)-raw13_calsigma(i) raw13_cal(i)+raw13_calsigma(i)],[raw13_14c(i) raw13_14c(i)],'-','color',[132/256 193/256 150/256])
             
             if i == 1
                 hold on
             end
-                    
+            
             % y error bars
             plot([raw13_cal(i) raw13_cal(i)],[raw13_14c(i)-raw13_14csigma(i) raw13_14c(i)+raw13_14csigma(i)],'-','color',[132/256 193/256 150/256])
             
@@ -478,17 +489,17 @@ if plotme==1
         axrawxlims = xlim;
         
     end
-
+    
     %----- Plot 14C age normal distribution(s)
     axgauss = axes;
     axes(axgauss);
     
     gaussrange = [c14age-4*c14err:c14age+4*c14err];
     gauss = normpdf(gaussrange,c14age,c14err);
-
+    
     gaussrangeorig = [c14ageorig-4*c14errorig:c14ageorig+4*c14errorig];
     gaussorig = normpdf(gaussrangeorig, c14ageorig, c14errorig);
-
+    
     area(gauss, gaussrange);
     axgaussylims = ylim;
     axgaussxlims = xlim;
@@ -499,7 +510,7 @@ if plotme==1
     area(gauss*0.2, gaussrange,'edgecolor',[0 0 0],'facecolor',[0.7 0.4 0.4]);
     
     %----- set plot settings by axis, starting from back layer to front layer
-
+    
     axes(axcurve)
     xlim(axcurvexlims)
     if strcmpi(yeartype, 'Cal BP') == 1 || strcmpi(yeartype, 'CalBP') == 1
@@ -520,7 +531,7 @@ if plotme==1
     xt=get(gca,'xtick');
     xtl=textscan(sprintf('%1.0f \n',xt),'%s','delimiter','');
     set(gca,'xticklabel',xtl{1})
-
+    
     axes(axpdf)
     set(gca,'color','none')
     xlim(axcurvexlims)
@@ -532,7 +543,7 @@ if plotme==1
         set(gca, 'XDir', 'reverse')
     end
     set(gca,'ytick',[]);
-
+    
     axes(axgauss)
     set(gca,'color','none')
     xlim(axgaussxlims)
@@ -545,7 +556,7 @@ if plotme==1
     else
         ylim(axcurveylims)
     end
-
+    
     if strcmpi('intcal13',calcurve) == 1;
         axes(axraw)
         hold on
@@ -562,9 +573,9 @@ if plotme==1
     else
         axes(axpdf)
     end
-
+    
     %----- Plot some text on the final axis
-
+    
     if strcmpi(yeartype, 'Cal BP') == 1 || strcmpi(yeartype, 'CalBP') == 1
         
         xlims = xlim;
@@ -632,15 +643,15 @@ if plotme==1
         text(xlims(1)+0.02*xaxrange, ylims(2)-0.06*yaxrange, [calcurve, ' ', cite])
         
     end
-
+    
     if calprob(1,2) > 0.000001 || calprob(end,2) > 0.000001
         title('Warning! Age calibration may exceed limits of calibration curve.')
-    elseif (c14age + 4*c14err) > max(curve14c) || (c14age - 4*c14err) < min(curve14c) 
+    elseif (c14age + 4*c14err) > max(curve14c) || (c14age - 4*c14err) < min(curve14c)
         title('Warning! Age calibration may exceed limits of calibration curve.')
     end
-
+    
     %----- Fix fonts and appearance
-
+    
     set(findall(gcf,'-property','FontSize'),'FontSize',fontsize)
     set(lab1,'FontWeight','bold')
     set(lab2,'FontWeight','bold')
@@ -654,7 +665,7 @@ if plotme==1
         ySize = plotsize;
         
         % set paper size (cm)f
-                set(gcf,'PaperUnits','centimeters')
+        set(gcf,'PaperUnits','centimeters')
         Y = plotsize+2;
         X = plotsize+2;
         set(gcf, 'PaperSize',[X Y])
