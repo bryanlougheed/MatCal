@@ -100,6 +100,8 @@ if nargin < 4
     error('Not enough input parameters (see help for instructions)')
 end
 
+matcalvers = 'MatCal 2.2 (Lougheed and Obrochta, 2016)';
+
 % Optional parameters input parser (parse varargin)
 
 p = inputParser;
@@ -222,8 +224,6 @@ elseif strcmpi(yeartype, 'BCE/CE') == 1
 else
     error(['Please specify a valid year type (see help for options)'])
 end
-
-matcalvers = 'MatCal 2.1 (Lougheed and Obrochta, 2016)';
 
 % correct for reservoir age and store original ages in memory
 
