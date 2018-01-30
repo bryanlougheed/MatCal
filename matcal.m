@@ -15,10 +15,10 @@ function  [p95_4 p68_2 calprob] = matcal(c14age, c14err, calcurve, yeartype, var
 %
 % c14err:    Lab 14C determination uncertainty (1 sigma) in 14C yr.
 %
-% calcurve:  String specifying calibration curve to use, select from:
+% calcurve:  String specifying calibration curve to use, select from
+%            the following (not case sensitive):
 %            'IntCal13', 'Marine13', 'SHCal13, 'IntCal09', 'Marine09'
-%            'IntCal04', 'Marine04', 'SHCal04, 'IntCal98', 'Marine98'
-%            (Not case sensitive.)
+%            'IntCal04', 'Marine04', 'SHCal04, 'IntCal98', 'Marine98'          
 %
 % yeartype:  String specifying how to report calibrated age.
 %            Choices are 'CalBP' or 'BCE/CE'. (Not case sensitive)
@@ -91,8 +91,8 @@ function  [p95_4 p68_2 calprob] = matcal(c14age, c14err, calcurve, yeartype, var
 %
 % ------------
 %
-% MatCal 2.2 (2017-02-20)
-% Written using MatLab 2012a.
+% MatCal 2.3 (2018-01-30)
+% Written using MatLab 2012a, compatible with 2017b.
 % Please see manuscript for license information:
 % http://doi.org/10.5334/jors.130
 
@@ -100,7 +100,7 @@ if nargin < 4
     error('Not enough input parameters (see help for instructions)')
 end
 
-matcalvers = 'MatCal 2.2 (Lougheed and Obrochta, 2016)';
+matcalvers = 'MatCal 2.3 (Lougheed and Obrochta, 2016)';
 
 % Optional parameters input parser (parse varargin)
 
@@ -197,7 +197,7 @@ elseif strcmpi(calcurve, 'Marine98') == 1
     cite = '(Stuiver et al., 1998)';
     curvetype = 'mar';
 else
-    error(['Please specify a valid calibration curve (see help for options)'])
+    error('Please specify a valid calibration curve (see help for options)')
 end
 
 
@@ -500,14 +500,18 @@ if plotme==1
     gaussrangeorig = [c14ageorig-4*c14errorig:c14ageorig+4*c14errorig];
     gaussorig = normpdf(gaussrangeorig, c14ageorig, c14errorig);
     
-    area(gauss, gaussrange);
+    patch(gauss, gaussrange, 'blue');
     axgaussylims = ylim;
     axgaussxlims = xlim;
+    axgaussxlims(2) = axgaussxlims(2)*5;
     if exist('plot14Coriginal','var') == 1
-        area(gaussorig*0.2, gaussrangeorig,'edgecolor','none','facecolor',[0.8 0.5 0.5]);
+        a = patch(gaussorig, gaussrangeorig, 'blue');
+        set(a,'edgecolor','none','facecolor',[0.8 0.5 0.5]);
         hold on
     end
-    area(gauss*0.2, gaussrange,'edgecolor',[0 0 0],'facecolor',[0.7 0.4 0.4]);
+    a = patch(gauss, gaussrange, 'blue');
+    set(a,'edgecolor',[0 0 0],'facecolor',[0.7 0.4 0.4]);
+    
     
     %----- set plot settings by axis, starting from back layer to front layer
     
@@ -520,7 +524,7 @@ if plotme==1
     lab1 = ylabel('^1^4C yr BP');
     lab2 = xlabel(yearlabel);
     set( gca, 'TickDir', 'out' );
-    if strcmpi('intcal13',calcurve) == 1;
+    if strcmpi('intcal13',calcurve) == 1
         ylim(axrawylims)
     else
         ylim(axcurveylims)
@@ -551,13 +555,15 @@ if plotme==1
     set(gca,'xtick',[]);
     set(gca,'yticklabel',[]);
     set(gca,'ytick',[]);
-    if strcmpi('intcal13',calcurve) == 1;
+    if strcmpi('intcal13',calcurve) == 1
         ylim(axrawylims)
     else
         ylim(axcurveylims)
     end
     
-    if strcmpi('intcal13',calcurve) == 1;
+    axes(axcurve) % bring curve forward
+    
+    if strcmpi('intcal13',calcurve) == 1
         axes(axraw)
         hold on
         if strcmpi(yeartype, 'Cal BP') == 1 || strcmpi(yeartype, 'CalBP') == 1
@@ -682,5 +688,6 @@ if plotme==1
     end
     
 end
+
 
 end
