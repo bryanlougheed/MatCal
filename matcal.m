@@ -1,4 +1,4 @@
-function  [p95_4 p68_2 calprob] = matcal(c14age, c14err, calcurve, yeartype, varargin)
+function  [p95_4, p68_2, calprob] = matcal(c14age, c14err, calcurve, yeartype, varargin)
 % [p95_4 p68_2 calprob] = matcal(c14age, c14err, calcurve, yeartype)
 %
 % Function for 14C age calibration using Bayesian higher posterior
@@ -71,27 +71,27 @@ function  [p95_4 p68_2 calprob] = matcal(c14age, c14err, calcurve, yeartype, var
 %            probability density function for implementation in, e.g.,
 %            age modelling. n is the annualised length of the chosen
 %            calibration curve. Col 1 is a series of annual cal ages,
-%            Col 2 contains their associated probability. Probabilities
-%            are normalised to between zero and one.
+%            Col 2 contains their associated probability. All probabilities
+%            are normalised such that they sum to 1.
 %
 % --- Functional examples ---
 %
-% [p95_4 p68_2 prob] = matcal(1175, 30, 'IntCal13, 'BCE/CE')
+% [p95_4 p68_2 prob] = matcal(1175, 30, 'IntCal13', 'BCE/CE')
 % Calibrate a 14C age of 1175 ±30 14C yr BP using IntCal13 with output in BCE/CE.
 %
 %
-% [p95_4 p68_2 prob] = matcal(23175, 60, 'Marine13, 'CalBP', 'resage', -50, 'reserr', 100, 'saveplot', 1)
+% [p95_4 p68_2 prob] = matcal(23175, 60, 'Marine13', 'CalBP', 'resage', -50, 'reserr', 100, 'saveplot', 1)
 % Calibrate a 14C age of 23175 ±60 14C yr BP using Marine13, with output in
 % Cal BP, with delta-R of -50 ±100 14C yr and save a copy of the plot to
 % your working directory as an Adobe PDF.
 %
-% [p95_4 p68_2 prob] = matcal(1175, 30, 'IntCal13, 'CalBP', 'plot', 0)
+% [p95_4 p68_2 prob] = matcal(1175, 30, 'IntCal13', 'CalBP', 'plot', 0)
 % Calibrate a 14C age of 1175±50 14C yr BP using IntCal13, with output in
 % Cal BP and disable the plot window.
 %
 % ------------
 %
-% MatCal 2.3 (2018-01-30)
+% MatCal 2.3.2 (2018-04-26) 
 % Written using MatLab 2012a, compatible with 2017b.
 % Please see manuscript for license information:
 % http://doi.org/10.5334/jors.130
@@ -100,7 +100,7 @@ if nargin < 4
     error('Not enough input parameters (see help for instructions)')
 end
 
-matcalvers = 'MatCal 2.3 (Lougheed and Obrochta, 2016)';
+matcalvers = 'MatCal 2.3.2 (Lougheed and Obrochta, 2016)';
 
 % Optional parameters input parser (parse varargin)
 
@@ -116,7 +116,7 @@ defaultprintme=0;
 defaultplotsize=16;
 defaultfontsize=8;
 
-if exist('OCTAVE_VERSION', 'builtin') ~= 0;
+if exist('OCTAVE_VERSION', 'builtin') ~= 0
     defaultplotme = 0;
     addParamValue(p,'resage',defaultresage,@isnumeric);
     addParamValue(p,'reserr',defaultreserr,@isnumeric);
@@ -196,17 +196,21 @@ elseif strcmpi(calcurve, 'Marine98') == 1
     calcurve = 'Marine98';
     cite = '(Stuiver et al., 1998)';
     curvetype = 'mar';
+elseif strcmpi(calcurve, 'IntCal13pCO2') == 1
+    calcurve = 'IntCal13pCO2';
+    cite = '(Reimer et al., 2013 + Galbraith et al. (2015) pCO2 effect)';
+    curvetype = 'atm';
 else
-    error('Please specify a valid calibration curve (see help for options)')
+    error(['Calibration curve "',calcurve,'" unknown. Please specify a valid calibration curve (see help for options)'])
 end
 
 
-if strcmp(curvetype, 'atm') == 1 && resage == 0;
+if strcmp(curvetype, 'atm') == 1 && resage == 0
     extralabel = 0;
     if reserr > 0
         error('You have specified reserr without entering resage.')
     end
-elseif strcmp(curvetype, 'atm') == 1 && resage > 0;
+elseif strcmp(curvetype, 'atm') == 1 && resage > 0
     extralabel = 1;
     reslabel = 'R(t)';
     plot14Coriginal = 1;
@@ -261,7 +265,7 @@ hicurvef14err = interp1(curvecal, curvef14err, hicurvecal);
 calprob = NaN(length(hicurvecal),2);
 
 z = 0;
-for i = 1:length(hicurvecal);
+for i = 1:length(hicurvecal)
     
     z = z + 1;
     
@@ -305,7 +309,7 @@ hpd68_2 = sortrows(hpd68_2,1);
 
 ind1 = find(diff(hpd68_2(:,1)) > 1);
 
-if isempty(ind1) == 1;
+if isempty(ind1) == 1
     p68_2(1,1) = hpd68_2(end,1);
     p68_2(1,2) = hpd68_2(1,1);
     p68_2(1,3) = sum(hpd68_2(1:end,2));
@@ -412,7 +416,7 @@ if plotme==1
     axpdfxlims = xlim;
     area(calprob(:,1),calprob(:,2)*0.2,'edgecolor',[0 0 0],'facecolor',[0.9 0.9 0.9])
     hold on
-    [M N] = size(p95_4);
+    M = size(p95_4,1);
     for i = 1:M
         if strcmpi(yeartype,'Cal BP') == 1 || strcmpi(yeartype,'CalBP') == 1
             area( calprob(calprob(:,1) <= p95_4(i,1) & calprob(:,1) >= p95_4(i,2),1)  , calprob(calprob(:,1) <= p95_4(i,1) & calprob(:,1) >= p95_4(i,2),2)*0.2,'edgecolor','none','facecolor',[0.56 0.56 0.66])
@@ -420,7 +424,7 @@ if plotme==1
             area( calprob(calprob(:,1) >= p95_4(i,1) & calprob(:,1) <= p95_4(i,2),1)  , calprob(calprob(:,1) >= p95_4(i,1) & calprob(:,1) <= p95_4(i,2),2)*0.2,'edgecolor','none','facecolor',[0.56 0.56 0.66])
         end
     end
-    [M N] = size(p68_2);
+    M = size(p68_2,1);
     for i = 1:M
         if strcmpi(yeartype,'Cal BP') == 1 || strcmpi(yeartype,'CalBP') == 1
             area( calprob(calprob(:,1) <= p68_2(i,1) & calprob(:,1) >= p68_2(i,2),1)  , calprob(calprob(:,1) <= p68_2(i,1) & calprob(:,1) >= p68_2(i,2),2)*0.2,'edgecolor','none','facecolor',[0.5 0.5 0.6])
@@ -441,7 +445,7 @@ if plotme==1
     axcurvexlims = [min(curvecal) max(curvecal)];
     
     %----- Plot raw data if intcal13 is selected
-    if strcmpi('intcal13',calcurve) == 1;
+    if strcmpi('intcal13',calcurve) == 1
         
         axraw = axes;
         axes(axraw)
@@ -590,11 +594,11 @@ if plotme==1
         xaxrange = xlims(2) - xlims(1);
         yaxrange = ylims(2) - ylims(1);
         
-        [M N] = size(p95_4);
+        M = size(p95_4,1);
         
         text(xlims(2)-0.63*xaxrange, ylims(2)-0.03*yaxrange, ['^1^4C date: ',num2str(c14ageorig),' \pm ',num2str(c14errorig),' ^1^4C yr BP'])
         
-        if extralabel == 1;
+        if extralabel == 1
             text(xlims(2)-0.63*xaxrange, ylims(2)-0.06*yaxrange, [reslabel,': ',num2str(resage),' \pm ',num2str(reserr), ' ^1^4C yr'])
             ypos = 0.11;
         else
@@ -623,11 +627,11 @@ if plotme==1
         xaxrange = abs( xlims(1) - xlims(2) );
         yaxrange = ylims(2) - ylims(1);
         
-        [M N] = size(p95_4);
+        M = size(p95_4,1);
         
         text(xlims(1)+0.63*xaxrange, ylims(2)-0.03*yaxrange, ['^1^4C date: ',num2str(c14ageorig),' \pm ',num2str(c14errorig),' ^1^4C yr BP'])
         
-        if extralabel == 1;
+        if extralabel == 1
             text(xlims(1)+0.63*xaxrange, ylims(2)-0.06*yaxrange, [reslabel,': ',num2str(resage),' \pm ',num2str(reserr), ' ^1^4C yr'])
             ypos = 0.11;
         else
@@ -684,7 +688,7 @@ if plotme==1
         set(gcf,'InvertHardcopy','on');
         set(gcf,'color',[1 1 1]);
         
-        print(figure(14), '-dpdf', ['MatCal ',num2str(c14ageorig),char(177),num2str(c14errorig),'.pdf']);
+        print(figure(14), '-dpdf', '-painters', ['MatCal ',num2str(c14ageorig),char(177),num2str(c14errorig),'.pdf']);
     end
     
 end
