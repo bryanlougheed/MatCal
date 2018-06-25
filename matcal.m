@@ -1,5 +1,5 @@
-function  [p95_4, p68_2, calprob] = matcal(c14age, c14err, calcurve, yeartype, varargin)
-% [p95_4 p68_2 calprob] = matcal(c14age, c14err, calcurve, yeartype)
+function  [p95_4, p68_2, calprob, medage] = matcal(c14age, c14err, calcurve, yeartype, varargin)
+% [p95_4, p68_2, calprob, medage] = matcal(c14age, c14err, calcurve, yeartype)
 %
 % Function for 14C age calibration using Bayesian higher posterior
 % density analysis of a probability density function of calibrated age.
@@ -74,6 +74,8 @@ function  [p95_4, p68_2, calprob] = matcal(c14age, c14err, calcurve, yeartype, v
 %            Col 2 contains their associated probability. All probabilities
 %            are normalised such that they sum to 1.
 %
+% medage:    Median age calculated from calprob.
+%
 % --- Functional examples ---
 %
 % [p95_4 p68_2 prob] = matcal(1175, 30, 'IntCal13', 'BCE/CE')
@@ -91,7 +93,7 @@ function  [p95_4, p68_2, calprob] = matcal(c14age, c14err, calcurve, yeartype, v
 %
 % ------------
 %
-% MatCal 2.3.2 (2018-04-26) 
+% MatCal 2.4 (2018-06-25) 
 % Written using MatLab 2012a, compatible with 2017b.
 % Please see manuscript for license information:
 % http://doi.org/10.5334/jors.130
@@ -100,7 +102,7 @@ if nargin < 4
     error('Not enough input parameters (see help for instructions)')
 end
 
-matcalvers = 'MatCal 2.3.2 (Lougheed and Obrochta, 2016)';
+matcalvers = 'MatCal 2.4 (Lougheed and Obrochta, 2016)';
 
 % Optional parameters input parser (parse varargin)
 
@@ -263,6 +265,7 @@ hicurvef14err = interp1(curvecal, curvef14err, hicurvecal);
 % Calculate probability for every cal year in F14 space
 
 calprob = NaN(length(hicurvecal),2);
+calprob(:,1) = hicurvecal;
 
 z = 0;
 for i = 1:length(hicurvecal)
@@ -275,9 +278,6 @@ for i = 1:length(hicurvecal)
     b = 2 * (f14err^2 + hicurvef14err(i)^2);
     c = sqrt(f14err^2 + hicurvef14err(i)^2);
     calprob(z,2) = exp(-a/b) / c;
-    
-    calprob(z,1) = hicurvecal(i);
-    
 end
 
 % normalise to 1
@@ -364,8 +364,13 @@ else
     p95_4 = flipud(p95_4);
 end
 
+% calculate median
+[~, median_ind] = min(abs(cumsum(calprob(:,2))-0.5));
+medage = round(calprob(median_ind(1),1));
+
 % Convert output to BC/BCE if necessary
 if strcmpi(yeartype,'BCE/CE') == 1
+	medage = (medage-1950) * -1;
     calprob(:,1) = (calprob(:,1)-1950) * -1;
     p95_4(:,1:2) = (p95_4(:,1:2)-1950) * -1;
     p68_2(:,1:2) = (p68_2(:,1:2)-1950) * -1;
