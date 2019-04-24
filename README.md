@@ -9,7 +9,7 @@ How to install in Matlab:
 -------------------------
 (1) Create a directory called 'matcalfolder' somewhere on your computer and unzip the contents of the 'MatCal-master' repository to that directory. 
 
-(2) For older versions of Matlab (2012a and earlier): Go to the 'File' menu, select 'Set Path'. For newer versions of Matlab (2012b and later): Go to the 'Home' tab, look under the 'Environment' section and click and click 'Set Path'.  
+(2) For newer versions of Matlab (2012b and later): Go to the 'Home' tab, look under the 'Environment' section and click and click 'Set Path'. For older versions of Matlab (2012a and earlier): Go to the 'File' menu, select 'Set Path'.   
     
 (3) Click 'Add Folder' to permanently add the 'matcalfolder' directory to your Matlab search path.
 
