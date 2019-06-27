@@ -19,4 +19,4 @@ How to install in Matlab:
 
 Octave compatibility:
 ---------------------
-From version 2.2 (2017-02-20) onwards, Matcal also offers partial functionality in Octave, as tested using Octave 4.2.0 64-bit in Windows 7. Matrices containing HPD intervals and probability distribution function (PDF) will be calculated. Calibration plots do not work, as the plotting requirements are currently not supported by the plotting libraries in Octave.
+From version 2.2 (2017-02-20) onwards, Matcal also offers partial functionality in Octave, as tested using Octave 4.2.0 64-bit in Windows 7. Matrices containing HPD intervals and probability distribution function (PDF) will be calculated. Only very basic calibration plots are provided, due to the limitations of the Octave plotting capabilities.
