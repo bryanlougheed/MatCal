@@ -56,6 +56,9 @@ function  [p95_4, p68_2, calprob, medage] = matcal(c14age, c14err, calcurve, yea
 %            size in the output plot. (default = 8)
 %            e.g. 'fontsize',12 for a font size of 12.
 %
+% revxdir:   Optional (parameter name and value). Reverse the plot x-axis.
+%            Specify 1 to reverse and 0 not to reverse. (default = 0)
+%			 e.g. 'revxdir',1 to reverse the x-axis.
 %
 % --- Output data ---
 %
@@ -94,17 +97,16 @@ function  [p95_4, p68_2, calprob, medage] = matcal(c14age, c14err, calcurve, yea
 %
 % ------------
 %
-% MatCal 2.5 (2019-06-27)
+% MatCal 2.6 (2019-10-24)
 % Originally written using MatLab 2012a, tested compatible with 2019a.
 % No toolboxes required.
 % Please see manuscript for more information:
 % http://doi.org/10.5334/jors.130
+matcalvers = 'MatCal 2.6 (Lougheed and Obrochta, 2016)';
 
 if nargin < 4
 	error('Not enough input parameters (see help for instructions)')
 end
-
-matcalvers = 'MatCal 2.5 (Lougheed and Obrochta, 2016)';
 
 % Optional parameters input parser (parse varargin)
 
@@ -113,12 +115,13 @@ p.KeepUnmatched = true;
 p.CaseSensitive = false;
 p.FunctionName='matcal';
 
-defaultresage=0;
-defaultreserr=0;
-defaultplotme=1;
-defaultprintme=0;
-defaultplotsize=16;
-defaultfontsize=8;
+defaultresage = 0;
+defaultreserr = 0;
+defaultplotme = 1;
+defaultprintme = 0;
+defaultplotsize = 16;
+defaultfontsize = 8;
+defaultrevxdir = 0;
 
 if exist('OCTAVE_VERSION', 'builtin') ~= 0
 	addParamValue(p,'resage',defaultresage,@isnumeric);
@@ -127,6 +130,7 @@ if exist('OCTAVE_VERSION', 'builtin') ~= 0
 	addParamValue(p,'saveplot',defaultprintme,@isnumeric);
 	addParamValue(p,'plotsize',defaultplotsize,@isnumeric);
 	addParamValue(p,'fontsize',defaultfontsize,@isnumeric);
+	addParamValue(p,'revxdir',defaultrevxdir,@isnumeric);
 else
 	if datenum(version('-date'))>datenum('May 19, 2013')
 		addParameter(p,'resage',defaultresage,@isnumeric);
@@ -135,6 +139,7 @@ else
 		addParameter(p,'saveplot',defaultprintme,@isnumeric);
 		addParameter(p,'plotsize',defaultplotsize,@isnumeric);
 		addParameter(p,'fontsize',defaultfontsize,@isnumeric);
+		addParameter(p,'revxdir',defaultrevxdir,@isnumeric);
 	else
 		addParamValue(p,'resage',defaultresage,@isnumeric);
 		addParamValue(p,'reserr',defaultreserr,@isnumeric);
@@ -142,21 +147,21 @@ else
 		addParamValue(p,'saveplot',defaultprintme,@isnumeric);
 		addParamValue(p,'plotsize',defaultplotsize,@isnumeric);
 		addParamValue(p,'fontsize',defaultfontsize,@isnumeric);
+		addParamValue(p,'revxdir',defaultrevxdir,@isnumeric);
 	end
 end
 
 parse(p,varargin{:});
-resage=p.Results.resage;
-reserr=p.Results.reserr;
-plotme=p.Results.plot;
-printme=p.Results.saveplot;
-plotsize=p.Results.plotsize;
-fontsize=p.Results.fontsize;
+resage = p.Results.resage;
+reserr = p.Results.reserr;
+plotme = p.Results.plot;
+printme = p.Results.saveplot;
+plotsize = p.Results.plotsize;
+fontsize = p.Results.fontsize;
+revxdir = p.Results.revxdir;
 
 % Cal curve case and symbols
-
 headerlines = 11;
-
 if strcmpi(calcurve, 'IntCal13') == 1
 	calcurve = 'IntCal13';
 	cite = '(Reimer et al., 2013)';
@@ -247,12 +252,10 @@ c14age = c14age - resage;
 c14err = sqrt(c14err^2 + reserr^2);
 
 % 14C age in F14 space, see e.g. Bronk Ramsey (2008) doi:10.1111/j.1475-4754.2008.00394.x
-
 f14age = exp(c14age/-8033);
 f14err = f14age*c14err/8033;
 
 % open cal curve data
-
 File = fopen([calcurve,'.14c']);
 Contents = textscan(File,'%f %f %f %f %f','headerlines',headerlines,'delimiter',',');
 fclose(File);
@@ -263,27 +266,20 @@ curvef14 = exp(curve14c/-8033); % and also convert to F14 space
 curvef14err = curvef14.*curve14cerr/8033; % and also convert to F14 space
 
 % interpolate F14 cal curve to annual resolution
-
 interpres = 1;
 hicurvecal = curvecal(1):interpres:curvecal(end);
 hicurvef14 = interp1(curvecal, curvef14, hicurvecal);
 hicurvef14err = interp1(curvecal, curvef14err, hicurvecal);
 
 % Calculate probability for every cal year in F14 space
-
 calprob = NaN(length(hicurvecal),2);
 calprob(:,1) = hicurvecal;
-
-z = 0;
-for i = 1:length(hicurvecal)
-	z = z + 1;
-	% equation from e.g. p.261 in Bronk Ramsey, 2008. doi:10.1111/j.1475-4754.2008.00394.x
-	% split equation into parts for sanity's sake
-	a = ( f14age - hicurvef14(i) )^2;
-	b = 2 * (f14err^2 + hicurvef14err(i)^2);
-	c = sqrt(f14err^2 + hicurvef14err(i)^2);
-	calprob(z,2) = exp(-a/b) / c;
-end
+% equation from e.g. p.261 in Bronk Ramsey, 2008. doi:10.1111/j.1475-4754.2008.00394.x
+% split equation into parts for sanity's sake
+a = (f14age - hicurvef14).^2; % vectorised version 2019-10-24
+b = 2 .* (f14err^2 + hicurvef14err.^2);
+c = (f14err^2 + hicurvef14err.^2).^0.5;
+calprob(:,2) = exp(-a./b) ./ c;
 
 % normalise to 1
 calprob(:,2) = calprob(:,2) / sum(calprob(:,2));
@@ -534,7 +530,7 @@ if plotme == 1
 		
 		axes(axcurve)
 		xlim(axcurvexlims)
-		if strcmpi(yeartype, 'Cal BP') == 1 || strcmpi(yeartype, 'CalBP') == 1
+		if revxdir == 1
 			set(gca, 'XDir', 'reverse')
 		end
 		set(gca,'color','none')
@@ -560,7 +556,7 @@ if plotme == 1
 		set(gca,'xticklabel',[]);
 		set(gca,'xtick',[]);
 		set(gca,'yticklabel',[]);
-		if strcmpi(yeartype, 'Cal BP') == 1 || strcmpi(yeartype, 'CalBP') == 1
+		if revxdir == 1
 			set(gca, 'XDir', 'reverse')
 		end
 		set(gca,'ytick',[]);
@@ -583,9 +579,6 @@ if plotme == 1
 		if strcmpi('intcal13',calcurve) == 1
 			axes(axraw)
 			hold on
-			if strcmpi(yeartype, 'Cal BP') == 1 || strcmpi(yeartype, 'CalBP') == 1
-				set(gca, 'XDir', 'reverse')
-			end
 			set(gca,'color','none')
 			xlim(axcurvexlims)
 			ylim(axrawylims)
@@ -593,9 +586,14 @@ if plotme == 1
 			set(gca,'xtick',[]);
 			set(gca,'yticklabel',[]);
 			set(gca,'ytick',[]);
+			if revxdir == 1
+				set(gca, 'XDir', 'reverse')
+			end
 		else
 			axes(axpdf)
 		end
+		
+	
 		
 		%----- Plot some text on the final axis
 		
