@@ -5,10 +5,11 @@ function pranges = hpdcalc(ages, probs, ageres, siglevel)
 %
 % Input
 % =====
-% ages    = vector of ages, equally spaced
-% probs   = vector of probabilities for each age
-%           Total probability should sum to 1.
-% ageres  = the age spacing in ages
+% ages     = vector of ages, equally spaced
+% probs    = vector of probabilities for each age
+%            Total probability should sum to 1.
+% ageres   = the age spacing in ages, e.g. 1 for 1 year
+% siglevel = Desired significance level, e.g. 0.95 for 95%
 %
 % Output
 % ======
